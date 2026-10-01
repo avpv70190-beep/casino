@@ -568,8 +568,9 @@ if (BOT_TOKEN) {
   const privateCasinoKeyboard = () =>
     new InlineKeyboard().webApp('🎰 Открыть казино', WEB_APP_URL);
 
+  const MAIN_MINI_APP_URL = process.env.MAIN_MINI_APP_URL || 'https://t.me/Petrushkalazikdopep_bot?startapp';
   const groupCasinoKeyboard = () =>
-    new InlineKeyboard().url('🎰 Открыть казино', WEB_APP_URL);
+    new InlineKeyboard().url('🎰 Открыть казино', MAIN_MINI_APP_URL);
 
   // /start работает и в личке, и в группе.
   bot.command('start', async ctx => {
@@ -577,6 +578,9 @@ if (BOT_TOKEN) {
     const isGroup = chatType === 'group' || chatType === 'supergroup';
 
     if (isGroup) {
+      // Регистрируем пользователя уже на /start. При открытии Main Mini App
+      // через direct link Telegram дополнительно передаст initData в приложение.
+      if (ctx.from?.id) getUser(ctx.from);
       await ctx.reply(
         '🎰 NIGHT CASINO\n\nЧтобы открыть казино, нажми кнопку ниже.',
         { reply_markup: groupCasinoKeyboard() }
