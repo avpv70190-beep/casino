@@ -1,9 +1,34 @@
 const tg = window.Telegram?.WebApp;
 const socket = window.io ? io({ transports: ['websocket', 'polling'] }) : null;
-const demoMode = !tg || !tg.initData;
 const storedDemoId = localStorage.getItem('demoId') || String(Math.floor(Math.random() * 900000 + 100000));
 const demoId = 'demo-' + storedDemoId;
 localStorage.setItem('demoId', storedDemoId);
+
+function getTelegramInitData(){
+  const value = window.Telegram?.WebApp?.initData ?? tg?.initData ?? '';
+  return String(value).trim();
+}
+function isLocalDev(){
+  return ['localhost','127.0.0.1'].includes(window.location.hostname);
+}
+function hasTelegramAuth(){
+  return Boolean(getTelegramInitData());
+}
+function authPayload(){
+  const initData = getTelegramInitData();
+  if(initData) return {initData};
+  if(isLocalDev()) return {demoId};
+  throw new Error('Telegram не передал данные авторизации. Откройте казино через кнопку в личном чате с ботом.');
+}
+async function waitForTelegramInitData(timeoutMs=3000){
+  const start = Date.now();
+  while(Date.now()-start < timeoutMs){
+    const initData = getTelegramInitData();
+    if(initData) return initData;
+    await wait(100);
+  }
+  return getTelegramInitData();
+}
 
 let user = null;
 let currentGame = null;
@@ -36,9 +61,22 @@ const instructions = {
 function escapeHtml(value){return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 function fmt(n,currency='USD'){const d=currencyDefs[currency]||currencyDefs.USD;return `${d.symbol}${Number(n||0).toLocaleString('en-US',{maximumFractionDigits:2})}`;}
 function walletAmount(currency=activeCurrency){return Number(user?.wallets?.[currency] ?? (currency==='USD'?user?.balance:0) ?? 0);}
-function headers(){return demoMode?{'Content-Type':'application/json','X-Demo-User':demoId}:{'Content-Type':'application/json','X-Telegram-Init-Data':tg.initData};}
+function headers(){
+  const initData = getTelegramInitData();
+  if(initData) return {'Content-Type':'application/json','X-Telegram-Init-Data':initData};
+  if(isLocalDev()) return {'Content-Type':'application/json','X-Demo-User':demoId};
+  return {'Content-Type':'application/json'};
+}
 async function api(path,opts={}){const r=await fetch(path,{cache:'no-store',...opts,headers:{...headers(),...(opts.headers||{})}});const text=await r.text();let j={};try{j=text?JSON.parse(text):{}}catch{const cleaned=text.replace(/\s+/g,' ').trim().slice(0,100);throw new Error(`API ${r.status}: ожидался JSON, получен другой ответ${cleaned?` — ${cleaned}`:''}`);}if(!r.ok)throw new Error(j.error||`Ошибка API (${r.status})`);return j;}
 function hideTelegramChrome(){try{tg?.ready();tg?.expand?.();tg?.setHeaderColor?.('#06090e');tg?.setBackgroundColor?.('#06090e');tg?.MainButton?.hide?.();tg?.SecondaryButton?.hide?.();tg?.BackButton?.hide?.();tg?.disableVerticalSwipes?.();}catch{}}
+
+function markTelegramReady(){
+  try{tg?.ready?.();}catch{}
+  if(!hasTelegramAuth() && !isLocalDev()){
+    const current=document.querySelector('#tgName');
+    if(current && !user) current.textContent='Авторизация Telegram…';
+  }
+}
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 function animateNumber(el,from,to,duration=420){if(!el||from===to){if(el)el.textContent=fmt(to);return;}const start=performance.now();const tick=now=>{const p=Math.min(1,(now-start)/duration),e=1-Math.pow(1-p,3);el.textContent=fmt(from+(to-from)*e);if(p<1)requestAnimationFrame(tick);else el.textContent=fmt(to);};el.classList.remove('balance-bump');void el.offsetWidth;el.classList.add('balance-bump');requestAnimationFrame(tick);}
@@ -159,12 +197,30 @@ function roomControls(room){if(!['dice','coinflip','roulette','blackjack'].inclu
 function showToast(message,type=''){const stack=document.querySelector('#toastStack'),item=document.createElement('div');item.className=`toast ${type}`;item.textContent=message;stack.appendChild(item);setTimeout(()=>{item.classList.add('out');setTimeout(()=>item.remove(),190);},2600);}
 function burstConfetti(count=20){const colors=['#38d9f2','#8557fa','#ffad38','#45e7ad','#ff5271'];for(let i=0;i<count;i++){const p=document.createElement('span');p.className='confetti';p.style.background=colors[i%colors.length];p.style.setProperty('--dx',`${(Math.random()-.5)*330}px`);p.style.setProperty('--rot',`${Math.random()*760-380}deg`);p.style.animationDelay=`${Math.random()*90}ms`;document.body.appendChild(p);setTimeout(()=>p.remove(),1100);}}
 
-async function auth(){try{const r=await api('/api/auth',{method:'POST',body:JSON.stringify(demoMode?{demoId}: {})});user=r.user;renderUser();renderProfile();hideTelegramChrome();}catch(e){console.error(e);showToast('Не удалось авторизовать пользователя','bad');}}
+async function auth(){
+  try{
+    await waitForTelegramInitData();
+    if(!hasTelegramAuth() && !isLocalDev()) throw new Error('Telegram не передал данные авторизации. Откройте казино через кнопку в личном чате с ботом.');
+    const r=await api('/api/auth',{method:'POST',body:JSON.stringify(isLocalDev() && !hasTelegramAuth()?{demoId}: {})});
+    user=r.user;
+    renderUser();
+    renderProfile();
+    hideTelegramChrome();
+  }catch(e){
+    console.error('Auth error:',e);
+    showToast(e.message || 'Не удалось авторизовать пользователя','bad');
+  }
+}
 
-document.querySelector('#createRoom').onclick=()=>socket?.emit('room:create',{...(demoMode?{demoId}:{initData:tg.initData}),game:document.querySelector('#roomGame').value},r=>{if(r?.error)return showToast(r.error,'bad');user=r.user;renderUser();roomChat=[];renderRoom(r.room);setPage('rooms');});
-document.querySelector('#joinRoom').onclick=()=>socket?.emit('room:join',{...(demoMode?{demoId}:{initData:tg.initData}),code:document.querySelector('#roomCode').value.trim()},r=>{if(r?.error)return showToast(r.error,'bad');user=r.user;renderUser();roomChat=[];renderRoom(r.room);setPage('rooms');});
+function roomAuth(){
+  try{return authPayload();}
+  catch(e){showToast(e.message,'bad');return null;}
+}
+
+document.querySelector('#createRoom').onclick=()=>{const auth=roomAuth();if(!auth)return;socket?.emit('room:create',{...auth,game:document.querySelector('#roomGame').value},r=>{if(r?.error)return showToast(r.error,'bad');user=r.user;renderUser();roomChat=[];renderRoom(r.room);setPage('rooms');});};
+document.querySelector('#joinRoom').onclick=()=>{const auth=roomAuth();if(!auth)return;socket?.emit('room:join',{...auth,code:document.querySelector('#roomCode').value.trim()},r=>{if(r?.error)return showToast(r.error,'bad');user=r.user;renderUser();roomChat=[];renderRoom(r.room);setPage('rooms');});};
 if(socket){socket.on('room:update',room=>{if(currentRoom?.code===room.code){renderRoom(room);}});socket.on('room:chat',m=>{roomChat.push(m);roomChat=roomChat.slice(-100);const box=document.querySelector('#chat');if(!box)return;const p=document.createElement('p'),b=document.createElement('b');b.textContent=m.name;p.append(b,document.createTextNode(`: ${m.text}`));box.appendChild(p);box.scrollTop=box.scrollHeight;});socket.on('room:round-result',()=>showToast('Раунд комнаты завершён','good'));}
 
-renderGames();hideTelegramChrome();loadMarket();setInterval(loadMarket,10*60*1000);auth();
+renderGames();markTelegramReady();hideTelegramChrome();loadMarket();setInterval(loadMarket,10*60*1000);auth();
 
 document.addEventListener('click',e=>{const cell=e.target.closest('.mine-cell');if(cell)revealMine(Number(cell.dataset.i));});
