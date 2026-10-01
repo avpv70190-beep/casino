@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#06090e" />
+  <title>NIGHT CASINO</title>
+  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="/style.css?v=1.2.0" />
+</head>
+<body>
+  <div class="ambient ambient-cyan" aria-hidden="true"></div>
+  <div class="ambient ambient-purple" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand"><span>NIGHT</span><em>CASINO</em></div>
+        <small id="tgName">гостевой режим</small>
+      </div>
+      <button id="helpBtn" class="icon-btn" aria-label="Помощь">?</button>
+    </header>
+
+    <section class="balance-hero" aria-label="Игровой баланс">
+      <div class="balance-main">
+        <span class="eyebrow">БАЛАНС</span>
+        <strong id="balance">$125,000</strong>
+      </div>
+      <div class="balance-meta">
+        <div><span>УРОВЕНЬ</span><b id="level">1</b></div>
+        <div><span>VIP</span><b id="vip">BRONZE</b></div>
+      </div>
+    </section>
+
+    <section class="market-panel" aria-label="Виртуальный рынок валют">
+      <div class="market-head"><div><span class="eyebrow">LIVE MARKET</span><b>Курсы валют</b></div><small id="marketStamp">Загрузка курса…</small></div>
+      <div id="marketTicker" class="market-ticker"></div>
+    </section>
+
+    <button id="bonusBtn" class="bonus-banner">
+      <span class="bonus-icon">✦</span>
+      <span class="bonus-copy"><b>ЕЖЕДНЕВНЫЙ БОНУС</b><small>+ $25,000</small></span>
+      <span class="bonus-arrow">›</span>
+    </button>
+
+    <nav class="tabs" aria-label="Разделы приложения">
+      <button data-page="games" class="active"><span>◈</span><b>Игры</b></button>
+      <button data-page="rooms"><span>⌂</span><b>Комнаты</b></button>
+      <button data-page="profile"><span>○</span><b>Профиль</b></button>
+      <button data-page="top"><span>♛</span><b>Топ</b></button>
+    </nav>
+
+    <main class="content">
+      <section id="page-games" class="page active">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">АРКАДА</span>
+            <h1>Игры</h1>
+          </div>
+          <button class="text-btn" id="allGamesBtn">Все <span>›</span></button>
+        </div>
+        <div id="games" class="game-grid"></div>
+        <section id="gamePanel" class="game-panel hidden" aria-live="polite"></section>
+      </section>
+
+      <section id="page-rooms" class="page">
+        <div class="section-head"><div><span class="eyebrow">MULTIPLAYER</span><h1>Играть вместе</h1></div></div>
+        <div class="panel-card room-create-card">
+          <div class="field-group"><label for="roomGame">Игра комнаты</label><select id="roomGame"><option value="roulette">🎡 Roulette</option><option value="coinflip">🪙 Coinflip</option><option value="dice">🎲 Dice</option><option value="blackjack">🃏 Blackjack</option></select></div>
+          <button id="createRoom" class="primary-btn">Создать комнату</button>
+        </div>
+        <div class="panel-card room-join-card">
+          <div class="field-group"><label for="roomCode">Код комнаты</label><input id="roomCode" placeholder="NC-XXXXXX" autocomplete="off" /></div>
+          <button id="joinRoom" class="secondary-btn">Войти</button>
+        </div>
+        <div id="roomView" class="panel-card hidden"></div>
+      </section>
+
+      <section id="page-profile" class="page">
+        <div class="section-head"><div><span class="eyebrow">ACCOUNT</span><h1>Профиль</h1></div></div>
+        <div id="profile" class="panel-card"></div>
+        <div id="portfolio" class="panel-card"></div>
+        <div id="history" class="panel-card"></div>
+      </section>
+
+      <section id="page-top" class="page">
+        <div class="section-head"><div><span class="eyebrow">LEADERBOARD</span><h1>Топ игроков</h1></div></div>
+        <div class="panel-card"><div id="top"></div></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+  <div id="modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button id="closeModal" class="close-btn" aria-label="Закрыть">×</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="/app.js?v=1.2.0"></script>
+</body>
+</html>

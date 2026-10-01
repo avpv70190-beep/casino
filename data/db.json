@@ -1,0 +1,95 @@
+{
+  "users": {
+    "7544114096": {
+      "id": "7544114096",
+      "name": "@Melon2347",
+      "balance": 100000,
+      "wallets": {
+        "USD": 100000,
+        "EUR": 0,
+        "GBP": 0,
+        "JPY": 0,
+        "CHF": 0,
+        "KZT": 0,
+        "CAD": 0,
+        "AUD": 0
+      },
+      "xp": 0,
+      "level": 1,
+      "vip": "BRONZE",
+      "games": 0,
+      "wins": 0,
+      "losses": 0,
+      "bestWin": 0,
+      "streak": 0,
+      "dailyClaim": 0,
+      "achievements": [],
+      "createdAt": 1790881528145
+    }
+  },
+  "history": [],
+  "promo": {},
+  "jackpots": {
+    "main": 500000
+  },
+  "blackjackRounds": {},
+  "minesRounds": {},
+  "crashRounds": {},
+  "market": {
+    "base": "USD",
+    "provider": "Frankfurter",
+    "sourceUrl": "https://api.frankfurter.dev/v2/rates",
+    "fetchedAt": 1790881528487,
+    "sourceDate": "2026-10-01",
+    "rates": {
+      "USD": {
+        "rate": 1,
+        "usdValue": 1,
+        "changePct": 0,
+        "sourceDate": "2026-10-01"
+      },
+      "AUD": {
+        "rate": 1.4373,
+        "usdValue": 0.6957489737702637,
+        "changePct": 0,
+        "sourceDate": "2026-10-01"
+      },
+      "CAD": {
+        "rate": 1.4205,
+        "usdValue": 0.7039774727208729,
+        "changePct": 0,
+        "sourceDate": "2026-10-01"
+      },
+      "CHF": {
+        "rate": 0.83422,
+        "usdValue": 1.1987245570712761,
+        "changePct": 0,
+        "sourceDate": "2026-10-01"
+      },
+      "EUR": {
+        "rate": 0.88217,
+        "usdValue": 1.1335683598399402,
+        "changePct": 0,
+        "sourceDate": "2026-10-02"
+      },
+      "GBP": {
+        "rate": 0.75389,
+        "usdValue": 1.3264534613803076,
+        "changePct": 0,
+        "sourceDate": "2026-10-01"
+      },
+      "JPY": {
+        "rate": 157.67,
+        "usdValue": 0.00634236062662523,
+        "changePct": 0,
+        "sourceDate": "2026-10-01"
+      },
+      "KZT": {
+        "rate": 440.96,
+        "usdValue": 0.0022677793904208998,
+        "changePct": 0,
+        "sourceDate": "2026-10-02"
+      }
+    }
+  }
+}
