@@ -563,10 +563,15 @@ app.use((err, req, res, next) => {
 
 if (BOT_TOKEN) {
   const bot = new Bot(BOT_TOKEN);
-  const casinoKeyboard = () => new InlineKeyboard().webApp('🎰 Открыть казино', WEB_APP_URL);
+  // В личке Telegram разрешает Web App-кнопку.
+  // В группах используем обычную URL-кнопку, чтобы избежать BUTTON_TYPE_INVALID.
+  const privateCasinoKeyboard = () =>
+    new InlineKeyboard().webApp('🎰 Открыть казино', WEB_APP_URL);
 
-  // /start работает одинаково предсказуемо в личке и в группе.
-  // В группе бот отвечает только на саму команду /start и не реагирует на обычные сообщения.
+  const groupCasinoKeyboard = () =>
+    new InlineKeyboard().url('🎰 Открыть казино', WEB_APP_URL);
+
+  // /start работает и в личке, и в группе.
   bot.command('start', async ctx => {
     const chatType = ctx.chat?.type;
     const isGroup = chatType === 'group' || chatType === 'supergroup';
@@ -574,18 +579,19 @@ if (BOT_TOKEN) {
     if (isGroup) {
       await ctx.reply(
         '🎰 NIGHT CASINO\n\nЧтобы открыть казино, нажми кнопку ниже.',
-        { reply_markup: casinoKeyboard() }
+        { reply_markup: groupCasinoKeyboard() }
       );
       return;
     }
 
     await ctx.reply(
       '🎰 NIGHT CASINO\n\nВиртуальное казино с играми в $. Все средства внутри игры виртуальные.\n\nНажми кнопку ниже.',
-      { reply_markup: casinoKeyboard() }
+      { reply_markup: privateCasinoKeyboard() }
     );
   });
 
   bot.command('help', ctx => ctx.reply('Игры: Слоты, Dice, Coinflip, Blackjack, Roulette, Mines, Crash и Wheel. Все $ — только виртуальная игровая валюта.'));
+  bot.catch(err => { console.error('Telegram bot error:', err.error || err); });
   bot.command('admin', ctx => ADMIN_IDS.has(String(ctx.from.id)) ? ctx.reply(`Админ-доступ подтверждён. Пользователей: ${Object.keys(db.users).length}.`) : ctx.reply('Нет доступа.'));
   bot.api.setChatMenuButton({ menu_button: { type:'web_app', text:'🎰 Казино', web_app:{url:WEB_APP_URL} } }).catch(()=>{});
   bot.start().catch(err => console.error('Bot error', err));
